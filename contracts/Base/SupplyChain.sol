@@ -149,7 +149,10 @@ modifier onlyOwner() {
     require(items[_upc].itemState == State.PackageByDistributor);
     _;
   }
-
+  modifier checkPrice(uint _upc, uint _price){
+    require(_price<=items[_upc].productPrice+0.1*items[_upc]].productPrice);
+    _;
+  }
   modifier forSaleByDistributor(uint _upc) {
     require(items[_upc].itemState == State.ForSaleByDistributor);
     _;
@@ -374,6 +377,7 @@ modifier onlyOwner() {
   function sellItemByDistributor(uint _upc, uint _price) public
     onlyDistributor() // check msg.sender belongs to DistributorRole
     packagedByDistributor(_upc)
+    checkPrice(_upc,_price)
     verifyCaller(items[_upc].ownerID) // check msg.sender is owner
     {
         items[_upc].itemState = State.ForSaleByDistributor;
@@ -431,6 +435,7 @@ modifier onlyOwner() {
   function sellItemByRetailer(uint _upc, uint _price) public
     onlyRetailer()  // check msg.sender belongs to RetailerRole
     receivedByRetailer(_upc)
+    checkPrice(_upc,_price)
     verifyCaller(items[_upc].ownerID) // check msg.sender is ownerID
     {
       items[_upc].itemState = State.ForSaleByRetailer;
@@ -450,9 +455,10 @@ modifier onlyOwner() {
       require()(items[_upc].sku-numOfUnits>=0),"Not enough amount of Product");
       items[_upc].consumerID = msg.sender;
       address payable ownerAddressPayable = _make_payable(items[_upc].retailerID);
-      ownerAddressPayable.transfer(items[_upc].productPrice);
+      ownerAddressPayable.transfer(items[_upc].productPrice*numOfUnits);
       items[_upc].ownerID = msg.sender;
       items[_upc].consumerID = msg.sender;
+      items[_upc].sku=items[_upc].sku-numOfUnits;
       if(items[_upc].sku==0){
         items[_upc].itemState = State.PurchasedByConsumer;
         itemsHistory[_upc].RTC = block.number;
